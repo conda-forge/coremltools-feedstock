@@ -16,10 +16,7 @@ source:
 build:
   number: 0
   # The upstream package does not support Windows.
-  # MacOS is supported, but requires MacOS>=10.13 to build.
-  # staged-recipes does not support specifying the Mac SDK
-  # version so we skip it for now and will unskip in the feedstock.
-  skip: True  # [win or osx]
+  skip: True  # [win]
 
 requirements:
   build:
