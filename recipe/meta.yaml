@@ -14,12 +14,9 @@ source:
   sha256: "b254b3b1bdb0d36ea83b34993d5de6d5ca3ab89a93e759d49e7a62307cad694c"
 
 build:
-  number: 0
+  number: 1
   # The upstream package does not support Windows.
-  # MacOS is supported, but requires MacOS>=10.13 to build.
-  # staged-recipes does not support specifying the Mac SDK
-  # version so we skip it for now and will unskip in the feedstock.
-  skip: True  # [win or osx]
+  skip: True  # [win]
 
 requirements:
   build:
