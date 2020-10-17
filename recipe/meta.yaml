@@ -14,7 +14,7 @@ source:
   sha256: "b254b3b1bdb0d36ea83b34993d5de6d5ca3ab89a93e759d49e7a62307cad694c"
 
 build:
-  number: 1
+  number: 2
   # The upstream package does not support Windows.
   skip: True  # [win]
 
