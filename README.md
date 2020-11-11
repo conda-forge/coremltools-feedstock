@@ -198,4 +198,5 @@ Feedstock Maintainers
 * [@1duo](https://github.com/1duo/)
 * [@TomAugspurger](https://github.com/TomAugspurger/)
 * [@aseemw](https://github.com/aseemw/)
+* [@seibert](https://github.com/seibert/)
 
