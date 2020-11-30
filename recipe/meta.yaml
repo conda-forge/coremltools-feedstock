@@ -40,7 +40,10 @@ requirements:
     - packaging
   run_constrained:
     - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
-    - pytorch >=1.4,<1.7
+    - pytorch >=1.4,<1.7  # inferred by testing
+    - scikit-learn >=0.17,<=0.19.2
+    - tensorflow >=1.12.0,<=1.15.0|>=2.1.0,<=2.3.1
+    - keras >=1.2.2,<=2.2.4
 
 test:
   imports:
