@@ -14,7 +14,7 @@ source:
   sha256: "b254b3b1bdb0d36ea83b34993d5de6d5ca3ab89a93e759d49e7a62307cad694c"
 
 build:
-  number: 3
+  number: 4
   # The upstream package does not support Windows.
   skip: True  # [win]
 
@@ -40,6 +40,7 @@ requirements:
     - packaging
   run_constrained:
     - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
+    - pytorch >=1.4,<1.7
 
 test:
   imports:
