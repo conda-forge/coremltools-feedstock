@@ -10,7 +10,7 @@ cmake \
     -DPYTHON_EXECUTABLE:FILEPATH=${PREFIX}/bin/python \
     -DPYTHON_INCLUDE_DIR=$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_paths()["include"])') \
     -DPYTHON_LIBRARY=${PREFIX}/lib \
-    ${CMAKE_ARGS}
+    ${CMAKE_ARGS} \
     ..
 make -j ${CPU_COUNT}
 
