@@ -1,5 +1,5 @@
 {% set name = "coremltools" %}
-{% set version = "4.0" %}
+{% set version = "4.1" %}
 
 package:
   name: {{ name|lower }}
@@ -11,12 +11,12 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: "b254b3b1bdb0d36ea83b34993d5de6d5ca3ab89a93e759d49e7a62307cad694c"
+  sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
 
 build:
-  number: 4
+  number: 0
   # The upstream package does not support Windows.
-  skip: True  # [win]
+  skip: true  # [win]
 
 requirements:
   build:
@@ -54,8 +54,8 @@ about:
   home: https://github.com/apple/coremltools
   license: BSD-3-Clause
   license_family: BSD
-  license_file: "LICENSE.txt"
-  summary: 'Core ML is an Apple framework to integrate machine learning models into your app. Core ML provides a unified representation for all models.'
+  license_file: LICENSE.txt
+  summary: Core ML is an Apple framework to integrate machine learning models into your app. Core ML provides a unified representation for all models.
 
   description: |
     Core ML is an Apple framework to integrate machine learning models into your app.
