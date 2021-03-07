@@ -14,7 +14,7 @@ source:
   sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
 
 build:
-  number: 0
+  number: 1
   # The upstream package does not support Windows.
   skip: true  # [win]
 
@@ -45,6 +45,8 @@ requirements:
 test:
   imports:
     - coremltools
+    # required for predict() on macOS
+    - coremltools.libcoremlpython  # [osx]
   commands:
     # TODO: change to running `coremlconverter --help`
     # when the upstream bug is fixed.
