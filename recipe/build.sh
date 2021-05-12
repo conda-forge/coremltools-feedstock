@@ -11,17 +11,18 @@ if [[ "${CONDA_BUILD_CROSS_COMPILATION:-0}" == "1" ]]; then
     unset CFLAGS
     unset CXXFLAGS
     export HOST=${BUILD}
-    export PREFIX=${BUILD_PREFIX}
+    export LDFLAGS=${LDFLAGS//$PREFIX/$BUILD_PREFIX}
     aclocal
     libtoolize
     autoconf
     autoreconf -i
     automake --add-missing
-    ./configure --prefix="${PREFIX}" \
+    ./configure --prefix="${BUILD_PREFIX}" \
             --build=${BUILD}         \
             --host=${BUILD} || (cat config.log; exit 1)
     make -j${CPU_COUNT}
     make install
+    cp src/js_embed ${BUILD_PREFIX}/bin/js_embed
   )
   popd
 fi
