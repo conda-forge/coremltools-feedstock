@@ -23,7 +23,7 @@ requirements:
     - libuuid  # [linux]
   run:
     - python
-    - {{ pin_compatible('numpy') }}
+    - numpy
     - protobuf >=3.1.0
     - attrs
     - sympy
