@@ -1,8 +1,7 @@
-{% set name = "coremltools" %}
-{% set version = "4.1" %}
+{% set version = "8.1" %}
 
 package:
-  name: {{ name|lower }}
+  name: coremltools
   version: {{ version }}
 
 source:
@@ -10,34 +9,50 @@ source:
   #   - LICENSE.txt
   #   - CMakeLists.txt
   # so we use GitHub releases.
-  url: https://github.com/apple/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
+  url: https://github.com/apple/coremltools/archive/refs/tags/{{ version }}.tar.gz
+  sha256: fd8e2f399a36b0870ba41b029decd7e619f04c91905d18ad703020778237795f
+  patches:
+    - patches/0001-Use-nlohmann_json-from-conda-forge.patch
+    # - patches/0002-Include-memory-header-in-JsonMap.patch
+    - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
+    - patches/0004-Avoid-building-test-code.patch
 
 build:
-  number: 2
+  number: 0
   # The upstream package does not support Windows.
   skip: true  # [win]
+  # Just build 1 python build until we are ready to finally release the package
+  skip: true  # [py != 312]
 
 requirements:
   build:
     - cmake
     - make
+    - {{ stdlib('c') }}
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
   host:
     - python
     - numpy
     - pip
+    - pybind11
+    - nlohmann_json
+    - zlib
   run:
     - python
     - {{ pin_compatible('numpy') }}
     - protobuf >=3.1.0
-    - six >=1.1.0
-    - attrs
     - sympy
-    - scipy
     - tqdm
     - packaging
+    - attrs >=21.3.0
+    - cattrs
+    - pyaml
+    # Optional but seems to provide a few features
+    - scipy
+    # Not listed on pypi recipe, but it is there in Version 7.1's conda pacakge upstream
+    # https://github.com/apple/coremltools/blob/main/scripts/conda/meta.yaml
+    - libuuid  # [linux]
   run_constrained:
     - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
     - pytorch >=1.4
@@ -47,10 +62,6 @@ test:
     - coremltools
     # required for predict() on macOS
     - coremltools.libcoremlpython  # [osx]
-  commands:
-    # TODO: change to running `coremlconverter --help`
-    # when the upstream bug is fixed.
-    - test -f ${PREFIX}/bin/coremlconverter
 
 about:
   home: https://github.com/apple/coremltools
