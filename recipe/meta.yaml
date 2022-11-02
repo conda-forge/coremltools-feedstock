@@ -1,63 +1,49 @@
-{% set name = "coremltools" %}
-{% set version = "4.1" %}
-
+# build a conda package from a local git checkout
 package:
-  name: {{ name|lower }}
-  version: {{ version }}
+  name: coremltools
+  version: {{ GIT_DESCRIBE_TAG }}
 
 source:
-  # The sdist on PyPI lacks at least
-  #   - LICENSE.txt
-  #   - CMakeLists.txt
-  # so we use GitHub releases.
-  url: https://github.com/apple/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
+  path: ../..  
 
 build:
-  number: 2
-  # The upstream package does not support Windows.
-  skip: true  # [win]
+  number: {{ GIT_DESCRIBE_NUMBER|int }}
+  string: py{{ CONDA_PY }}_{{GIT_DESCRIBE_HASH}}_{{ GIT_DESCRIBE_NUMBER }}
 
 requirements:
   build:
     - cmake
     - make
-    - {{ compiler('c') }}
-    - {{ compiler('cxx') }}
+    - {{ compiler('c') }}  # [linux]
+    - {{ compiler('cxx') }}  # [linux]
   host:
     - python
     - numpy
     - pip
+    - libuuid  # [linux]
   run:
     - python
-    - {{ pin_compatible('numpy') }}
+    - numpy
     - protobuf >=3.1.0
-    - six >=1.1.0
     - attrs
     - sympy
-    - scipy
     - tqdm
     - packaging
+    - libuuid  # [linux]
   run_constrained:
-    - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
-    - pytorch >=1.4
+    - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.15") }}  # [osx]
+    - pytorch >=1.4,<1.7  # inferred by testing
 
 test:
   imports:
     - coremltools
-    # required for predict() on macOS
-    - coremltools.libcoremlpython  # [osx]
-  commands:
-    # TODO: change to running `coremlconverter --help`
-    # when the upstream bug is fixed.
-    - test -f ${PREFIX}/bin/coremlconverter
 
 about:
   home: https://github.com/apple/coremltools
   license: BSD-3-Clause
   license_family: BSD
-  license_file: LICENSE.txt
-  summary: Core ML is an Apple framework to integrate machine learning models into your app. Core ML provides a unified representation for all models.
+  license_file: "LICENSE.txt"
+  summary: 'Core ML is an Apple framework to integrate machine learning models into your app. Core ML provides a unified representation for all models.'
 
   description: |
     Core ML is an Apple framework to integrate machine learning models into your app.
@@ -69,10 +55,3 @@ about:
     Core ML optimizes on-device performance by leveraging the CPU, GPU, and Neural Engine while minimizing its memory footprint and power consumption.
   doc_url: https://coremltools.readme.io/docs
   dev_url: https://github.com/apple/coremltools
-
-extra:
-  recipe-maintainers:
-    - 1duo
-    - aseemw
-    - seibert
-    - TobyRoseman
