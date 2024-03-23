@@ -47,9 +47,6 @@ test:
     # required for predict() on macOS
     - coremltools.libcoremlpython  # [osx]
   commands:
-    # TODO: change to running `coremlconverter --help`
-    # when the upstream bug is fixed.
-    - test -f ${PREFIX}/bin/coremlconverter
     - coremlconverter --help
 
 about:
