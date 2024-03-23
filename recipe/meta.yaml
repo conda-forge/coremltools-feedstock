@@ -1,8 +1,7 @@
-{% set name = "coremltools" %}
-{% set version = "6.0" %}
+{% set version = "7.1" %}
 
 package:
-  name: {{ name|lower }}
+  name: coremltools
   version: {{ version }}
 
 source:
@@ -10,8 +9,8 @@ source:
   #   - LICENSE.txt
   #   - CMakeLists.txt
   # so we use GitHub releases.
-  url: https://github.com/apple/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: 8ce600af9fa07bf30781dd3becfceca31b99a43f424bc84bd164bf5c640a6b7f
+  url: https://github.com/apple/coremltools/archive/{{ version }}.tar.gz
+  sha256: 36dbc815f59649ada0d11249e0c583309729cceb45db96cbbad8a4cadca4fd1f
 
 build:
   number: 0
@@ -51,6 +50,7 @@ test:
     # TODO: change to running `coremlconverter --help`
     # when the upstream bug is fixed.
     - test -f ${PREFIX}/bin/coremlconverter
+    - coremlconverter --help
 
 about:
   home: https://github.com/apple/coremltools
