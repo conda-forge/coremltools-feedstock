@@ -10,7 +10,7 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/coremltools/archive/{{ version }}.tar.gz
-  sha256: 36dbc815f59649ada0d11249e0c583309729cceb45db96cbbad8a4cadca4fd1f
+  sha256: d3222966982367b2be4ce62f1bd2b3dddc5a0ae018724a9acf850fbf2b0cc09a
 
 build:
   number: 0
