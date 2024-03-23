@@ -5,7 +5,7 @@ set -x
 mkdir build
 cd build
 
-cmake \
+cmake ${CMAKE_ARGS} \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} \
     -DPYTHON_EXECUTABLE:FILEPATH=${PREFIX}/bin/python \
     -DPYTHON_INCLUDE_DIR=$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_paths()["include"])') \
