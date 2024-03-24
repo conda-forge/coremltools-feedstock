@@ -12,9 +12,9 @@ source:
   url: https://github.com/apple/coremltools/archive/{{ version }}.tar.gz
   sha256: d3222966982367b2be4ce62f1bd2b3dddc5a0ae018724a9acf850fbf2b0cc09a
   patches:
-    - 0001-Use-nlohmann_json-from-conda-forge.patch
-    - 0002-Include-memory-header-in-JsonMap.patch
-    - 0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
+    - patches/0001-Use-nlohmann_json-from-conda-forge.patch
+    - patches/0002-Include-memory-header-in-JsonMap.patch
+    - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
 
 build:
   number: 0
