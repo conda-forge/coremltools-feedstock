@@ -55,8 +55,6 @@ test:
     - coremltools
     # required for predict() on macOS
     - coremltools.libcoremlpython  # [osx]
-  commands:
-    - coremlconverter --help
 
 about:
   home: https://github.com/apple/coremltools
