@@ -46,6 +46,9 @@ requirements:
     - pyaml
     # Optional but seems to provide a few features
     - scipy
+    # Not listed on pypi recipe, but it is there in Version 7.1's conda pacakge upstream
+    # https://github.com/apple/coremltools/blob/main/scripts/conda/meta.yaml
+    - libuuid  # [linux]
   run_constrained:
     - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
     - pytorch >=1.4
