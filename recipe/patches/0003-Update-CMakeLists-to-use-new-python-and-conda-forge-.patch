@@ -47,7 +47,7 @@ index d462525..f44a4b2 100644
 -      RESULT_VARIABLE NUMPY_INCLUDE_STATUS
 -      OUTPUT_VARIABLE NUMPY_INCLUDE
 -  )
-+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
++  find_package(Python COMPONENTS Interpreter Development NumPy REQUIRED)
 +  message("Found numpy include path at ${Python_NumPy_INCLUDE_DIRS}")
  
 -  if("${NUMPY_INCLUDE}" STREQUAL "" OR NOT NUMPY_INCLUDE_STATUS EQUAL 0)
