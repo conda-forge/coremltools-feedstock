@@ -1,7 +1,8 @@
-MACOSX_DEPLOYMENT_TARGET:  # [osx and x86_64]
-  - 13.3                   # [osx and x86_64]
-MACOSX_SDK_VERSION:        # [osx and x86_64]
+MACOSX_DEPLOYMENT_TARGET:  # [osx]
+  - 13.3                   # [osx]
+MACOSX_SDK_VERSION:        # [osx]
+  - 13.3                   # [osx]
   # - 11.7                   # [osx and x86_64]  # does not download
-  - 11.3                   # [osx and x86_64]
+  # - 11.3                   # [osx and x86_64]  # fail
   # - 11.0                   # [osx and x86_64]  # fail
   # - 13.3                   # [osx and x86_64]
