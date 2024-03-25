@@ -1,0 +1,24 @@
+From ec52b7e31b5471ad1d86d3ff2e64be11342ab309 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sat, 23 Mar 2024 21:43:24 -0400
+Subject: [PATCH 2/3] Include memory header in JsonMap
+
+---
+ modelpackage/src/utils/JsonMap.hpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/modelpackage/src/utils/JsonMap.hpp b/modelpackage/src/utils/JsonMap.hpp
+index 0d7dc3f..962d25b 100644
+--- a/modelpackage/src/utils/JsonMap.hpp
++++ b/modelpackage/src/utils/JsonMap.hpp
+@@ -10,6 +10,7 @@
+ #include <iostream>
+ #include <vector>
+ #include <string>
++#include <memory>
+ 
+ class JsonMapImpl;
+ 
+-- 
+2.43.2
+
