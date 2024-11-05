@@ -14,7 +14,7 @@ source:
   sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
 
 build:
-  number: 2
+  number: 3
   # The upstream package does not support Windows.
   skip: true  # [win]
 
@@ -23,6 +23,7 @@ requirements:
     - cmake
     - make
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - {{ compiler('cxx') }}
   host:
     - python
@@ -30,7 +31,6 @@ requirements:
     - pip
   run:
     - python
-    - {{ pin_compatible('numpy') }}
     - protobuf >=3.1.0
     - six >=1.1.0
     - attrs
@@ -39,7 +39,6 @@ requirements:
     - tqdm
     - packaging
   run_constrained:
-    - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
     - pytorch >=1.4
 
 test:
