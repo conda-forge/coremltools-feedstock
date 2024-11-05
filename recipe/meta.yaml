@@ -1,5 +1,5 @@
 {% set name = "coremltools" %}
-{% set version = "4.1" %}
+{% set version = "5.0" %}
 
 package:
   name: {{ name|lower }}
@@ -11,10 +11,10 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/{{ name }}/archive/{{ version }}.tar.gz
-  sha256: fdbc1e96bdeda0b23222864cb802053c67d8165a9e000e873d9b4028815ce61b
+  sha256: 452b369c657247a944875877628494d59f519bc9742cfc158244f9243d20eb8a
 
 build:
-  number: 2
+  number: 0
   # The upstream package does not support Windows.
   skip: true  # [win]
 
