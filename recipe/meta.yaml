@@ -34,6 +34,7 @@ requirements:
     - numpy                                  # [build_platform != target_platform]
     - cmake
     - make
+    - {{ stdlib('c') }}
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
   host:
