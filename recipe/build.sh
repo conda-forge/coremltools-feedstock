@@ -3,7 +3,7 @@
 set -e
 set -x
 
-if [[ "${CONDA_BUILD_CROSS_COMPILATION:-0}" == "1" ]]; then
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-0}" == "1" && "${CROSSCOMPILING_EMULATOR}" == "" ]]; then
   pushd deps/protobuf
   (
     export CC=$CC_FOR_BUILD
@@ -22,7 +22,6 @@ if [[ "${CONDA_BUILD_CROSS_COMPILATION:-0}" == "1" ]]; then
             --host=${BUILD} || (cat config.log; exit 1)
     make -j${CPU_COUNT}
     make install
-    cp src/js_embed ${BUILD_PREFIX}/bin/js_embed
   )
   popd
 fi
