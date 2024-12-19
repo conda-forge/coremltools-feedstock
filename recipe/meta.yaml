@@ -43,8 +43,9 @@ requirements:
     - {{ compiler('cxx') }}
   host:
     - python
-    - numpy
     - pip
+    - setuptools
+    - numpy
     - pybind11
     - nlohmann_json
     - zlib
@@ -68,6 +69,10 @@ requirements:
     - pytorch >=1.4
 
 test:
+  requires:
+    - pip
+  commands:
+    - pip check
   imports:
     - coremltools
     # required for predict() on macOS
