@@ -25,8 +25,6 @@ build:
   number: 0
   # The upstream package does not support Windows.
   skip: true  # [win]
-  # Just build 1 python build until we are ready to finally release the package
-  skip: true  # [py != 312]
 
 requirements:
   build:
