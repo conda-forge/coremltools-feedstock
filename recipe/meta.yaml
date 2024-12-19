@@ -13,12 +13,9 @@ source:
   sha256: fd8e2f399a36b0870ba41b029decd7e619f04c91905d18ad703020778237795f
   patches:
     - patches/0001-Use-nlohmann_json-from-conda-forge.patch
-    - patches/0002-Include-memory-header-in-JsonMap.patch
+    # - patches/0002-Include-memory-header-in-JsonMap.patch
     - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
     - patches/0004-Avoid-building-test-code.patch
-    # Add support for python 3.12
-    # https://github.com/apple/coremltools/pull/2170
-    - patches/2170-imp-to-importlib.patch
 
 build:
   number: 0
