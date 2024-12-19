@@ -1,4 +1,4 @@
-{% set version = "7.1" %}
+{% set version = "8.1" %}
 
 package:
   name: coremltools
@@ -10,7 +10,7 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/coremltools/archive/{{ version }}.tar.gz
-  sha256: d3222966982367b2be4ce62f1bd2b3dddc5a0ae018724a9acf850fbf2b0cc09a
+  sha256: 4ec92ef1d4b203b1763cf7107edbfab2054ab47ac676ae09b2c5cf5a9af2ad44
   patches:
     - patches/0001-Use-nlohmann_json-from-conda-forge.patch
     - patches/0002-Include-memory-header-in-JsonMap.patch
