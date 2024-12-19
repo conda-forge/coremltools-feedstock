@@ -1,15 +1,12 @@
 #!/bin/bash
 
-set -e
-set -x
+set -ex
 mkdir build
 cd build
 
-cmake \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} \
-    -DPYTHON_EXECUTABLE:FILEPATH=${PREFIX}/bin/python \
-    -DPYTHON_INCLUDE_DIR=$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_paths()["include"])') \
-    -DPYTHON_LIBRARY=${PREFIX}/lib \
+cmake ${CMAKE_ARGS} \
+    -DPython_FIND_STRATEGY:STRING=LOCATION \
+    -DPython_ROOT_DIR:FILEPATH="${PREFIX}" \
     ..
 make -j ${CPU_COUNT}
 
