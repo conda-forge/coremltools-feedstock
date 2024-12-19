@@ -46,7 +46,8 @@ requirements:
     - zlib
   run:
     - python
-    - {{ pin_compatible('numpy') }}
+    # TODO: Check numpy minimum and other dependencies too
+    - numpy >=1.21
     - protobuf >=3.1.0
     - sympy
     - tqdm
@@ -60,7 +61,6 @@ requirements:
     # https://github.com/apple/coremltools/blob/main/scripts/conda/meta.yaml
     - libuuid  # [linux]
   run_constrained:
-    - __osx >={{ MACOSX_DEPLOYMENT_TARGET|default("10.9") }}  # [osx]
     - pytorch >=1.4
 
 test:
