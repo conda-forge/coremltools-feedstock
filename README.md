@@ -346,5 +346,6 @@ Feedstock Maintainers
 * [@1duo](https://github.com/1duo/)
 * [@TobyRoseman](https://github.com/TobyRoseman/)
 * [@aseemw](https://github.com/aseemw/)
+* [@hmaarrfk](https://github.com/hmaarrfk/)
 * [@seibert](https://github.com/seibert/)
 
