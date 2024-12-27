@@ -2,14 +2,36 @@
 
 set -e
 set -x
+
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-0}" == "1" && "${CROSSCOMPILING_EMULATOR}" == "" ]]; then
+  pushd deps/protobuf
+  (
+    export CC=$CC_FOR_BUILD
+    export CXX=$CXX_FOR_BUILD
+    unset CFLAGS
+    unset CXXFLAGS
+    export HOST=${BUILD}
+    export LDFLAGS=${LDFLAGS//$PREFIX/$BUILD_PREFIX}
+    aclocal
+    libtoolize
+    autoconf
+    autoreconf -i
+    automake --add-missing
+    ./configure --prefix="${BUILD_PREFIX}" \
+            --build=${BUILD}         \
+            --host=${BUILD} || (cat config.log; exit 1)
+    make -j${CPU_COUNT}
+    make install
+  )
+  popd
+fi
+
 mkdir build
 cd build
 
-cmake \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} \
-    -DPYTHON_EXECUTABLE:FILEPATH=${PREFIX}/bin/python \
-    -DPYTHON_INCLUDE_DIR=$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_paths()["include"])') \
-    -DPYTHON_LIBRARY=${PREFIX}/lib \
+cmake ${CMAKE_ARGS} \
+    -DPython_FIND_STRATEGY:STRING=LOCATION \
+    -DPython_ROOT_DIR:FILEPATH="${PREFIX}" \
     ..
 make -j ${CPU_COUNT}
 

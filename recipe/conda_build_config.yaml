@@ -1,2 +1,8 @@
-MACOSX_DEPLOYMENT_TARGET:  # [osx]
-  - 10.14                  # [osx]
+c_stdlib_version:          # [osx and x86_64]
+  - "10.15"                # [osx and x86_64]
+MACOSX_SDK_VERSION:        # [osx]
+  - 13.3                   # [osx]
+  # - 11.7                   # [osx and x86_64]  # does not download
+  # - 11.3                   # [osx and x86_64]  # fail
+  # - 11.0                   # [osx and x86_64]  # fail
+  # - 13.3                   # [osx and x86_64]
