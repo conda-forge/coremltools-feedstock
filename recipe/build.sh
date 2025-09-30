@@ -32,6 +32,7 @@ cd build
 cmake ${CMAKE_ARGS} \
     -DPython_FIND_STRATEGY:STRING=LOCATION \
     -DPython_ROOT_DIR:FILEPATH="${PREFIX}" \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     ..
 make -j ${CPU_COUNT}
 
