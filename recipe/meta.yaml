@@ -1,4 +1,4 @@
-{% set version = "8.1" %}
+{% set version = "8.3" %}
 
 package:
   name: coremltools
@@ -10,7 +10,7 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/coremltools/archive/refs/tags/{{ version }}.tar.gz
-  sha256: fd8e2f399a36b0870ba41b029decd7e619f04c91905d18ad703020778237795f
+  sha256: 56c7db904e35dce7c0479983121cc47014eb5789b8fd6e12c594c2f579062839
   patches:
     - patches/0001-Use-nlohmann_json-from-conda-forge.patch
     - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
