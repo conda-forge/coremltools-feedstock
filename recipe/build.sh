@@ -30,6 +30,7 @@ mkdir build
 cd build
 
 cmake ${CMAKE_ARGS} \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DPython_FIND_STRATEGY:STRING=LOCATION \
     -DPython_ROOT_DIR:FILEPATH="${PREFIX}" \
     ..
