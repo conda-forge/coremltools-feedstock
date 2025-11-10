@@ -1,4 +1,4 @@
-{% set version = "8.3" %}
+{% set version = "9.0" %}
 
 package:
   name: coremltools
@@ -10,7 +10,7 @@ source:
   #   - CMakeLists.txt
   # so we use GitHub releases.
   url: https://github.com/apple/coremltools/archive/refs/tags/{{ version }}.tar.gz
-  sha256: 56c7db904e35dce7c0479983121cc47014eb5789b8fd6e12c594c2f579062839
+  sha256: 0582e0307dbdccdcb4936f8b3b6880bb2e815d9a416a3e76127824bd3bec5ce6
   patches:
     - patches/0001-Use-nlohmann_json-from-conda-forge.patch
     - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
@@ -22,7 +22,7 @@ source:
     - patches/0007-Use-strip-from-environment-variable.patch
 
 build:
-  number: 1
+  number: 0
   # The upstream package does not support Windows.
   skip: true  # [win]
 
