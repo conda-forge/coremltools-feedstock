@@ -1,0 +1,27 @@
+From faab7cbd9f420a6a841c7e45adcf59a5410246e1 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Thu, 19 Dec 2024 14:23:27 -0500
+Subject: [PATCH 4/8] Use strip from environment variable
+
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 141d43a8..778a9eaa 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -104,8 +104,8 @@ foreach(cdir IN ITEMS ${copy_dirs})
+ endforeach()
+ 
+ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+-  set(_additional_milstoragepython_command COMMAND strip -x ${PROJECT_SOURCE_DIR}/coremltools/libmilstoragepython.so)
+-  set(_additional_modelpackage_command COMMAND strip -x ${PROJECT_SOURCE_DIR}/coremltools/libmodelpackage.so)
++  set(_additional_milstoragepython_command COMMAND $ENV{STRIP} -x ${PROJECT_SOURCE_DIR}/coremltools/libmilstoragepython.so)
++  set(_additional_modelpackage_command COMMAND $ENV{STRIP} -x ${PROJECT_SOURCE_DIR}/coremltools/libmodelpackage.so)
+ endif()
+ 
+ add_custom_command(
+-- 
+2.51.0
+

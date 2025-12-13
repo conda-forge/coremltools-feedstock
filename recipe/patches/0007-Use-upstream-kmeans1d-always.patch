@@ -1,0 +1,110 @@
+From c17b17fe586db6bc71b6f22937669e48e35bfb18 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sat, 13 Dec 2025 14:59:04 -0500
+Subject: [PATCH 7/8] Use upstream kmeans1d always
+
+---
+ .../models/neural_network/quantization_utils.py      |  5 ++---
+ coremltools/optimize/torch/_utils/k_means.py         | 12 ++++++------
+ .../torch/palettization/_efficient_kmeans.py         |  4 ++--
+ 3 files changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/coremltools/models/neural_network/quantization_utils.py b/coremltools/models/neural_network/quantization_utils.py
+index a2839a7d..e69be0ec 100644
+--- a/coremltools/models/neural_network/quantization_utils.py
++++ b/coremltools/models/neural_network/quantization_utils.py
+@@ -15,7 +15,7 @@ import numpy as _np
+ 
+ import coremltools as _ct
+ from coremltools import _logger
+-from coremltools._deps import _HAS_KMEANS1D, _kmeans1d
++import kmeans1d
+ from coremltools.optimize import _utils as _optimize_utils
+ 
+ from ... import (
+@@ -398,9 +398,8 @@ def _get_kmeans_lookup_table_and_weight(
+         weight.shape[1] == 1 and num_weights >= 10_000 and weight.dtype == _np.float16
+     )
+ 
+-    if (is_better_to_use_kmeans1d and _HAS_KMEANS1D) or force_kmeans1d:
++    if is_better_to_use_kmeans1d or force_kmeans1d:
+         # Cluster with kmeans1d
+-        assert _HAS_KMEANS1D, "Unable to import kmeans1d, please make sure it's installed."
+         values, indices, counts = _np.unique(weight, return_inverse=True, return_counts=True)
+         indices = indices.flatten()
+         n_clusters = min(len(values), lut_len)
+diff --git a/coremltools/optimize/torch/_utils/k_means.py b/coremltools/optimize/torch/_utils/k_means.py
+index 2e39810d..297b2fef 100644
+--- a/coremltools/optimize/torch/_utils/k_means.py
++++ b/coremltools/optimize/torch/_utils/k_means.py
+@@ -20,7 +20,7 @@ import torch.multiprocessing as _mp
+ from attr import define as _define
+ from tqdm import tqdm
+ 
+-from coremltools._deps import _kmeans1d
++import kmeans1d
+ from coremltools.optimize import _utils as optimize_utils
+ from coremltools.optimize.torch._utils.metadata_utils import (
+     CompressionMetadata as _CompressionMetadata,
+@@ -523,13 +523,13 @@ class KMeans:
+         if len(block_weight_flatten_masked) > 0:
+             if block_importance is not None:
+                 block_importance_flatten = block_importance.flatten()
+-                kmeans_results = _kmeans1d.cluster(
++                kmeans_results = kmeans1d.cluster(
+                     block_weight_flatten_masked.numpy(),
+                     num_clusters,
+                     weights=block_importance_flatten[block_mask].numpy(),
+                 )
+             else:
+-                kmeans_results = _kmeans1d.cluster(
++                kmeans_results = kmeans1d.cluster(
+                     block_weight_flatten_masked.numpy(), num_clusters
+                 )
+             return _torch.tensor(kmeans_results.centroids), _torch.tensor(kmeans_results.clusters)
+@@ -551,7 +551,7 @@ class KMeans:
+         block_weight_flatten = block_weight.flatten().numpy()
+         if block_importance is not None:
+             block_importance_flatten = block_importance.flatten().numpy()
+-            kmeans_results = _kmeans1d.cluster(
++            kmeans_results = kmeans1d.cluster(
+                 block_weight_flatten,
+                 num_clusters,
+                 weights=block_importance_flatten,
+@@ -584,7 +584,7 @@ class KMeans:
+                 return_counts=True,
+             )
+             num_clusters = min(len(values), num_clusters)
+-            kmeans_results = _kmeans1d.cluster(values, num_clusters, weights=counts)
++            kmeans_results = kmeans1d.cluster(values, num_clusters, weights=counts)
+             # Expand clusters according to np.unique indices
+             # XXX: kmeans_results is a namedtuple, which is why we use this constructor
+             kmeans_results = type(kmeans_results)(
+@@ -592,7 +592,7 @@ class KMeans:
+                 centroids=kmeans_results.centroids,
+             )
+         else:
+-            kmeans_results = _kmeans1d.cluster(block_weight_flatten, num_clusters)
++            kmeans_results = kmeans1d.cluster(block_weight_flatten, num_clusters)
+ 
+         # First create numpy array from list and then tensor from numpy array.
+         # This is much faster than creating tensor from list.
+diff --git a/coremltools/optimize/torch/palettization/_efficient_kmeans.py b/coremltools/optimize/torch/palettization/_efficient_kmeans.py
+index da7c40d4..e8b2c7f2 100644
+--- a/coremltools/optimize/torch/palettization/_efficient_kmeans.py
++++ b/coremltools/optimize/torch/palettization/_efficient_kmeans.py
+@@ -212,9 +212,9 @@ class _EfficientKMeans:
+                 )
+ 
+             elif self.cluster_centers_ == "opt1d":
+-                from coremltools._deps import _kmeans1d
++                import kmeans1d
+ 
+-                self.labels_, self.cluster_centers_ = _kmeans1d.cluster(
++                self.labels_, self.cluster_centers_ = kmeans1d.cluster(
+                     X, self.n_clusters, weights=sample_weight
+                 )
+ 
+-- 
+2.51.0
+

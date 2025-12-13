@@ -1,0 +1,185 @@
+From 29ecc6a4c6b9b0439016eee73edbffbb2d37668a Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sun, 14 Dec 2025 14:05:00 -0500
+Subject: [PATCH 8/8] Use python for enumgen instead of cpp for cross
+ compilation
+
+---
+ cmake/coreml-utils.cmake |   7 +--
+ mlmodel/CMakeLists.txt   |   9 +---
+ mlmodel/tools/enumgen.py | 105 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 110 insertions(+), 11 deletions(-)
+ create mode 100755 mlmodel/tools/enumgen.py
+
+diff --git a/cmake/coreml-utils.cmake b/cmake/coreml-utils.cmake
+index 74490042..518d53d7 100644
+--- a/cmake/coreml-utils.cmake
++++ b/cmake/coreml-utils.cmake
+@@ -36,10 +36,11 @@ function(coreml_add_build_proto proto_fn target_suffix)
+             ${CMAKE_CURRENT_BINARY_DIR}/format/${proto_fn}_enum.h
+         COMMENT "Generating c++ enums from ${proto_fn}.proto into ${CMAKE_CURRENT_BINARY_DIR}/format/"
+         COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+-            --plugin=protoc-gen-enum=mlmodel/enumgen
++            --plugin=protoc-gen-enum=${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py
+             --enum_out=${CMAKE_CURRENT_BINARY_DIR}/format/
+             -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+             ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
++        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     )
+     add_custom_command(
+@@ -68,11 +69,11 @@ function(coreml_add_build_proto proto_fn target_suffix)
+         add_custom_target(tgt_${proto_fn}_enums ALL
+             COMMENT "Generating c++ enums from ${proto_fn}.proto into ${CMAKE_CURRENT_SOURCE_DIR}/build/format/"
+             COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+-                --plugin=protoc-gen-enum=mlmodel/enumgen
++                --plugin=protoc-gen-enum=${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py
+                 --enum_out=${CMAKE_CURRENT_SOURCE_DIR}/build/format/
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+                 ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-            DEPENDS enumgen
++            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+         )
+         add_custom_target(tgt_${proto_fn}_python ALL
+diff --git a/mlmodel/CMakeLists.txt b/mlmodel/CMakeLists.txt
+index 29aed16b..bb6dab52 100644
+--- a/mlmodel/CMakeLists.txt
++++ b/mlmodel/CMakeLists.txt
+@@ -176,10 +176,7 @@ set_property(TARGET mlmodel
+ 
+ target_link_libraries(mlmodel PRIVATE protobuf::libprotobuf protobuf::libprotoc)
+ 
+-add_executable(enumgen
+-    EXCLUDE_FROM_ALL
+-    tools/enumgen.cpp
+-)
++set(ENUMGEN_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py)
+ 
+ set(proto_files
+     ArrayFeatureExtractor
+@@ -217,10 +214,6 @@ set(proto_files
+     WordTagger
+ )
+ 
+-target_link_libraries(enumgen
+-    PRIVATE protobuf::libprotobuf protobuf::libprotoc
+-)
+-
+ option(OVERWRITE_PB_SOURCE
+        "Regenerates protobuf sources in the source tree, too." OFF)
+ 
+diff --git a/mlmodel/tools/enumgen.py b/mlmodel/tools/enumgen.py
+new file mode 100755
+index 00000000..19d51006
+--- /dev/null
++++ b/mlmodel/tools/enumgen.py
+@@ -0,0 +1,105 @@
++#!/usr/bin/env python3
++import sys
++from google.protobuf.compiler import plugin_pb2 as plugin
++from google.protobuf import descriptor_pb2
++
++INDENT = "    "
++
++def basename(filename):
++    dot_position = filename.find('.')
++    if dot_position == -1:
++        return filename
++    return filename[:dot_position]
++
++def make_ext(filename):
++    return f"{basename(filename)}_enums.h"
++
++def make_guard(filename):
++    upper_basename = basename(filename).upper()
++    return f"__{upper_basename}_ENUMS_H"
++
++def handle_container(container, output):
++    enum_types = container.enum_types_by_name.values() if hasattr(container, 'enum_types_by_name') else []
++    for enum_type in enum_types:
++        output.write(f"enum ML{enum_type.name}: int {{\n")
++        for enum_value in enum_type.values:
++            output.write(f"{INDENT}ML{enum_type.name}{enum_value.name}")
++            output.write(f" = {enum_value.number},\n")
++        output.write("};\n\n")
++
++class OutputWriter:
++    def __init__(self):
++        self.lines = []
++    def write(self, text):
++        self.lines.append(text)
++    def get_content(self):
++        return ''.join(self.lines)
++
++def handle_message(message, output):
++    handle_container(message, output)
++
++    oneofs = message.oneofs if hasattr(message, 'oneofs') else []
++    for oneof_type in oneofs:
++        enum_name = f"ML{message.name}{oneof_type.name}"
++        output.write(f"enum {enum_name}: int {{\n")
++        for field in oneof_type.fields:
++            output.write(f"{INDENT}{enum_name}_{field.name}")
++            output.write(f" = {field.number},\n")
++        output.write(f"{INDENT}{enum_name}_NOT_SET = 0,\n")
++        output.write("};\n\n")
++
++        output.write("__attribute__((__unused__))\n")
++        output.write(f"static const char * {enum_name}_Name({enum_name} x) {{\n")
++        output.write(f"{INDENT}switch (x) {{\n")
++        for field in oneof_type.fields:
++            output.write(f"{INDENT}{INDENT}case {enum_name}_{field.name}:\n")
++            output.write(f"{INDENT}{INDENT}{INDENT}")
++            output.write(f'return "{enum_name}_{field.name}";\n')
++        output.write(f"{INDENT}{INDENT}case {enum_name}_NOT_SET:\n")
++        output.write(f"{INDENT}{INDENT}{INDENT}return \"INVALID\";\n")
++        output.write(f"{INDENT}}}\n")
++        output.write(f"{INDENT}return \"INVALID\";\n")
++        output.write("}\n\n")
++
++    nested_types = message.nested_types if hasattr(message, 'nested_types') else []
++    for nested_type in nested_types:
++        handle_message(nested_type, output)
++
++def make_contents(file_descriptor):
++    writer = OutputWriter()
++    guard = make_guard(file_descriptor.name)
++    writer.write(f"#ifndef {guard}\n")
++    writer.write(f"#define {guard}\n")
++
++    handle_container(file_descriptor, writer)
++    message_types = file_descriptor.message_types_by_name.values() if hasattr(file_descriptor, 'message_types_by_name') else []
++    for message_type in message_types:
++        handle_message(message_type, writer)
++
++    writer.write("#endif\n")
++    return writer.get_content()
++
++def main():
++    request = plugin.CodeGeneratorRequest()
++    request.ParseFromString(sys.stdin.buffer.read())
++
++    from google.protobuf import descriptor_pool
++    pool = descriptor_pool.DescriptorPool()
++
++    for proto_file_proto in request.proto_file:
++        pool.Add(proto_file_proto)
++
++    response = plugin.CodeGeneratorResponse()
++
++    for proto_file_proto in request.proto_file:
++        file_descriptor = pool.FindFileByName(proto_file_proto.name)
++
++        output_file = response.file.add()
++        output_file.name = make_ext(file_descriptor.name)
++        output_file.content = make_contents(file_descriptor)
++
++    sys.stdout.buffer.write(response.SerializeToString())
++    return 0
++
++if __name__ == '__main__':
++    sys.exit(main())
+-- 
+2.51.0
+

@@ -1,0 +1,32 @@
+From cb226a1fb50b395832b2d07128acee6edafabb22 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sun, 24 Mar 2024 13:05:47 -0400
+Subject: [PATCH 3/8] Avoid building test code
+
+---
+ mlmodel/CMakeLists.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/mlmodel/CMakeLists.txt b/mlmodel/CMakeLists.txt
+index 14a57c03..1d96c1ed 100644
+--- a/mlmodel/CMakeLists.txt
++++ b/mlmodel/CMakeLists.txt
+@@ -16,6 +16,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+   ")
+ endif()
+ 
++if (BUILD_TESTS)
+ add_library(mlmodel_test
+     STATIC
+ 
+@@ -68,6 +69,7 @@ add_executable(mlmodel_test_runner
+ target_link_libraries(mlmodel_test_runner
+     mlmodel_test
+ )
++endif ()  # BUILD_TESTS
+ 
+ add_library(mlmodel
+     STATIC
+-- 
+2.51.0
+

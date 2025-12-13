@@ -9,17 +9,18 @@ source:
   #   - LICENSE.txt
   #   - CMakeLists.txt
   # so we use GitHub releases.
+  # They would also vendor many protobuf things, which we work to unvendor here
   url: https://github.com/apple/coremltools/archive/refs/tags/{{ version }}.tar.gz
   sha256: 0582e0307dbdccdcb4936f8b3b6880bb2e815d9a416a3e76127824bd3bec5ce6
   patches:
     - patches/0001-Use-nlohmann_json-from-conda-forge.patch
-    - patches/0003-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
-    - patches/0004-Avoid-building-test-code.patch
-    - patches/0005-Do-not-dependend-on-googletest-for-protobuf-compilat.patch
-    # Needed for when we use cross compilation without emulation
-    - patches/0006-Ask-coreml-utils-to-use-BUILD_PREFIX-protoc.patch  # [osx and (build_platform != target_platform)]
-    # Helps with cross compilation, doesn't hurt otherwise
-    - patches/0007-Use-strip-from-environment-variable.patch
+    - patches/0002-Update-CMakeLists-to-use-new-python-and-conda-forge-.patch
+    - patches/0003-Avoid-building-test-code.patch
+    - patches/0004-Use-strip-from-environment-variable.patch
+    - patches/0005-Adjust-build-system-to-unvendor-protobuf.patch
+    - patches/0006-Update-mlmodel-to-newer-absel.patch
+    - patches/0007-Use-upstream-kmeans1d-always.patch
+    - patches/0008-Use-python-for-enumgen-instead-of-cpp-for-cross-comp.patch
 
 build:
   number: 0
@@ -28,9 +29,6 @@ build:
 
 requirements:
   build:
-    - autoconf                               # [osx and (build_platform != target_platform)]
-    - automake                               # [osx and (build_platform != target_platform)]
-    - libtool                                # [osx and (build_platform != target_platform)]
     - python                                 # [build_platform != target_platform]
     - cross-python_{{ target_platform }}     # [build_platform != target_platform]
     - numpy                                  # [build_platform != target_platform]
@@ -39,6 +37,9 @@ requirements:
     - {{ stdlib('c') }}
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
+    # libprotobuf is needed for protoc
+    - protobuf                               # [build_platform != target_platform]
+    - libprotobuf                            # [build_platform != target_platform]
   host:
     - python
     - pip
@@ -47,6 +48,10 @@ requirements:
     - pybind11
     - nlohmann_json
     - zlib
+    - protobuf
+    - libprotobuf
+    - libprotobuf-python-headers
+    - libabseil
   run:
     - python
     # TODO: Check numpy minimum and other dependencies too
@@ -63,6 +68,8 @@ requirements:
     # Not listed on pypi recipe, but it is there in Version 7.1's conda pacakge upstream
     # https://github.com/apple/coremltools/blob/main/scripts/conda/meta.yaml
     - libuuid  # [linux]
+    # we unvendored their version of kmeans1d
+    - kmeans1d
   run_constrained:
     - pytorch >=1.4
 
