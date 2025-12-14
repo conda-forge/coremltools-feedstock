@@ -1,0 +1,297 @@
+From 4e970ac374db2f74dd0163404f95f352b3423516 Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sat, 13 Dec 2025 14:49:08 -0500
+Subject: [PATCH 5/8] Adjust build system to unvendor protobuf
+
+---
+ CMakeLists.txt             | 35 +++--------------------------------
+ cmake/coreml-utils.cmake   | 37 +++++++++++--------------------------
+ cmake/fix_proto_imports.py | 19 +++++++++++++++++++
+ deps/CMakeLists.txt        | 14 --------------
+ deps/protobuf/Makefile.am  |  2 +-
+ mlmodel/CMakeLists.txt     | 12 +++---------
+ 6 files changed, 37 insertions(+), 82 deletions(-)
+ create mode 100755 cmake/fix_proto_imports.py
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 778a9eaa..46528204 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -31,7 +31,6 @@ if(HAS_CCACHE)
+   set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+ endif()
+ 
+-add_subdirectory(deps)
+ add_subdirectory(mlmodel)
+ 
+ find_package(Python COMPONENTS Interpreter Development REQUIRED)
+@@ -40,9 +39,10 @@ message("Found python at ${Python_EXECUTABLE}")
+ message("Found python version ${Python_VERSION_STRING}")
+ message("Found python includes ${Python_INCLUDE_DIRS}")
+ 
++find_package(Protobuf REQUIRED)
++
+ include_directories(
+   .
+-  deps/protobuf/src
+   mlmodel/src
+   ${Python_INCLUDE_DIRS}
+   )
+@@ -75,7 +75,7 @@ target_compile_definitions(modelpackage
+ 
+ target_link_libraries(modelpackage
+   mlmodel
+-  libprotobuf
++  protobuf::libprotobuf
+   )
+ 
+ if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+@@ -179,35 +179,6 @@ else()
+ endif()
+ 
+ 
+-# Build kmeans-1d
+-set(KMEANS_DIR "${PROJECT_SOURCE_DIR}/deps/kmeans1d")
+-execute_process(
+-  COMMAND python3 setup.py build_ext --inplace
+-  WORKING_DIRECTORY ${KMEANS_DIR}
+-  RESULT_VARIABLE KMEANS1D_BUILD_STATUS
+-)
+-
+-if(NOT KMEANS1D_BUILD_STATUS EQUAL 0)
+-  message(FATAL_ERROR "Could not build kmeans1d dependency")
+-endif()
+-
+-# Somehow Python's setuptools is building this shared object file so that it tries to load the C++
+-# standard library using an rpath that only exist on the build machine. Change that so it gets
+-# loaded from the standard location.
+-if(APPLE)
+-  file(GLOB SO_FILE "${PROJECT_SOURCE_DIR}/deps/kmeans1d/kmeans1d/_core.*.so")
+-  execute_process(
+-    COMMAND install_name_tool -change @rpath/libc++.1.dylib /usr/lib/libc++.1.dylib ${SO_FILE}
+-  )
+-endif()
+-
+-# Copy kmeans-1d to Python deps folder
+-execute_process(
+-  COMMAND cp -r kmeans1d ../../coremltools/_deps
+-  WORKING_DIRECTORY ${KMEANS_DIR}
+-)
+-
+-
+ set(Python_TAG "cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
+ if(APPLE)
+   execute_process(COMMAND uname -m OUTPUT_VARIABLE HARDWARE_NAME OUTPUT_STRIP_TRAILING_WHITESPACE)
+diff --git a/cmake/coreml-utils.cmake b/cmake/coreml-utils.cmake
+index ab4679c8..74490042 100644
+--- a/cmake/coreml-utils.cmake
++++ b/cmake/coreml-utils.cmake
+@@ -25,40 +25,32 @@ function(coreml_add_build_proto proto_fn target_suffix)
+             ${CMAKE_CURRENT_BINARY_DIR}/format/${proto_fn}.pb.cc
+             ${CMAKE_CURRENT_BINARY_DIR}/format/${proto_fn}.pb.h
+         COMMENT "Generating c++ sources from ${proto_fn}.proto into ${CMAKE_CURRENT_BINARY_DIR}/format/"
+-        COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++        COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+             --cpp_out=${CMAKE_CURRENT_BINARY_DIR}/format/
+             -I${CMAKE_CURRENT_SOURCE_DIR}/format
+             ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-        DEPENDS protoc
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     )
+     add_custom_command(
+         OUTPUT
+             ${CMAKE_CURRENT_BINARY_DIR}/format/${proto_fn}_enum.h
+         COMMENT "Generating c++ enums from ${proto_fn}.proto into ${CMAKE_CURRENT_BINARY_DIR}/format/"
+-        COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++        COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+             --plugin=protoc-gen-enum=mlmodel/enumgen
+             --enum_out=${CMAKE_CURRENT_BINARY_DIR}/format/
+             -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+             ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-        DEPENDS enumgen protoc
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     )
+     add_custom_command(
+         OUTPUT
+             ${CMAKE_BINARY_DIR}/coremltools${target_suffix}/proto/${proto_fn}_pb2.py
+         COMMENT "Generating Python sources from ${proto_fn}.proto into ${CMAKE_BINARY_DIR}/coremltools${target_suffix}/proto/"
+-        COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++        COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+             --python_out=${CMAKE_BINARY_DIR}/coremltools${target_suffix}/proto
+             -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+             ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-        COMMAND python
+-            -m lib2to3
+-            -wn
+-            --no-diff
+-            -f import
+-            ${CMAKE_BINARY_DIR}/coremltools${target_suffix}/${proto_fn}_pb2.py
+-        DEPENDS protoc
++        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/fix_proto_imports.py ${CMAKE_BINARY_DIR}/coremltools${target_suffix}/proto/${proto_fn}_pb2.py
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     )
+     # For the CoreML framework we read the source file locations for these, and
+@@ -67,37 +59,30 @@ function(coreml_add_build_proto proto_fn target_suffix)
+     if(OVERWRITE_PB_SOURCE)
+         add_custom_target(tgt_${proto_fn}_source ALL
+             COMMENT "Generating c++ sources from ${proto_fn}.proto into ${CMAKE_CURRENT_SOURCE_DIR}/build/format/"
+-            COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++            COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+                 --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/build/format/
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/format
+                 ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-            DEPENDS protoc
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+         )
+         add_custom_target(tgt_${proto_fn}_enums ALL
+             COMMENT "Generating c++ enums from ${proto_fn}.proto into ${CMAKE_CURRENT_SOURCE_DIR}/build/format/"
+-            COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++            COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+                 --plugin=protoc-gen-enum=mlmodel/enumgen
+                 --enum_out=${CMAKE_CURRENT_SOURCE_DIR}/build/format/
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+                 ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-            DEPENDS enumgen protoc
++            DEPENDS enumgen
+             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+         )
+         add_custom_target(tgt_${proto_fn}_python ALL
+             COMMENT "Generating Python sources from ${proto_fn}.proto into ${CMAKE_SOURCE_DIR}/coremltools${target_suffix}/proto/"
+-            COMMAND ${CMAKE_BINARY_DIR}/deps/protobuf/cmake/protoc
++            COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+                 --python_out=${CMAKE_SOURCE_DIR}/coremltools${target_suffix}/proto
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/format/
+                 ${CMAKE_CURRENT_SOURCE_DIR}/format/${proto_fn}.proto
+-            COMMAND python
+-                -m lib2to3
+-                -wn
+-                --no-diff
+-                -f import
+-                ${CMAKE_SOURCE_DIR}/coremltools${target_suffix}/proto/${proto_fn}_pb2.py
+-            DEPENDS protoc
+-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
++            COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/fix_proto_imports.py ${CMAKE_SOURCE_DIR}/coremltools${target_suffix}/proto/${proto_fn}_pb2.py
++    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+         )
+         # Record dependencies for 'protosrc' target.
+         list(APPEND proto_depends tgt_${proto_fn}_source)
+@@ -105,4 +90,4 @@ function(coreml_add_build_proto proto_fn target_suffix)
+         list(APPEND proto_depends tgt_${proto_fn}_python)
+         set(proto_depends ${proto_depends} PARENT_SCOPE)
+     endif()
+-endfunction()
+\ No newline at end of file
++endfunction()
+diff --git a/cmake/fix_proto_imports.py b/cmake/fix_proto_imports.py
+new file mode 100755
+index 00000000..24032e83
+--- /dev/null
++++ b/cmake/fix_proto_imports.py
+@@ -0,0 +1,19 @@
++#!/usr/bin/env python3
++import pathlib
++import re
++import sys
++
++if len(sys.argv) < 2:
++    print("Usage: fix_proto_imports.py <path_to_pb2_file>", file=sys.stderr)
++    sys.exit(1)
++
++proto_file = pathlib.Path(sys.argv[1])
++if not proto_file.exists():
++    print(f"Error: File not found: {proto_file}", file=sys.stderr)
++    sys.exit(1)
++
++content = proto_file.read_text()
++content = re.sub(r'^import (\w+_pb2) as (\w+__pb2)', r'from coremltools.proto import \1 as \2', content, flags=re.M)
++content = re.sub(r'^import (\w+_pb2)$', r'from coremltools.proto import \1', content, flags=re.M)
++content = re.sub(r'^from (\w+_pb2) import', r'from coremltools.proto.\1 import', content, flags=re.M)
++proto_file.write_text(content)
+diff --git a/deps/CMakeLists.txt b/deps/CMakeLists.txt
+index 858e6a02..bace8ff0 100644
+--- a/deps/CMakeLists.txt
++++ b/deps/CMakeLists.txt
+@@ -1,16 +1,2 @@
+ cmake_minimum_required(VERSION 3.0.0)
+ project(deps)
+-
+-set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build tests")
+-
+-add_subdirectory(protobuf/cmake
+-	EXCLUDE_FROM_ALL
+-)
+-
+-set_property(TARGET libprotobuf
+-	PROPERTY POSITION_INDEPENDENT_CODE ON
+-)
+-
+-set_property(TARGET libprotobuf-lite
+-	PROPERTY POSITION_INDEPENDENT_CODE ON
+-)
+diff --git a/deps/protobuf/Makefile.am b/deps/protobuf/Makefile.am
+index f37ae9fd..64425857 100644
+--- a/deps/protobuf/Makefile.am
++++ b/deps/protobuf/Makefile.am
+@@ -9,7 +9,7 @@ AUTOMAKE_OPTIONS = foreign
+ SUBDIRS = . src
+ 
+ # Always include third_party directories in distributions.
+-DIST_SUBDIRS = src conformance benchmarks third_party/googletest
++DIST_SUBDIRS = src conformance benchmarks
+ 
+ # Build gmock before we build protobuf tests.  We don't add gmock to SUBDIRS
+ # because then "make check" would also build and run all of gmock's own tests,
+diff --git a/mlmodel/CMakeLists.txt b/mlmodel/CMakeLists.txt
+index 1d96c1ed..29aed16b 100644
+--- a/mlmodel/CMakeLists.txt
++++ b/mlmodel/CMakeLists.txt
+@@ -3,11 +3,10 @@ include("${CMAKE_SOURCE_DIR}/cmake/coreml-utils.cmake")
+ include_directories(
+   ..
+   ../deps/FP16/include
+-  ../deps/protobuf/src
+   src
+ )
+ 
+-add_definitions(-DGOOGLE_PROTOBUF_NO_STATIC_INITIALIZER)
++find_package(Protobuf REQUIRED)
+ 
+ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+   set(CMAKE_CXX_FLAGS " \
+@@ -74,8 +73,6 @@ endif ()  # BUILD_TESTS
+ add_library(mlmodel
+     STATIC
+ 
+-    ../deps/protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc
+-
+     ${CMAKE_CURRENT_BINARY_DIR}/format/ArrayFeatureExtractor.pb.cc
+     ${CMAKE_CURRENT_BINARY_DIR}/format/AudioFeaturePrint.pb.cc
+     ${CMAKE_CURRENT_BINARY_DIR}/format/BayesianProbitRegressor.pb.cc
+@@ -177,14 +174,11 @@ set_property(TARGET mlmodel
+     PROPERTY POSITION_INDEPENDENT_CODE ON
+ )
+ 
+-target_link_libraries(mlmodel
+-  libprotobuf-lite
+-)
++target_link_libraries(mlmodel PRIVATE protobuf::libprotobuf protobuf::libprotoc)
+ 
+ add_executable(enumgen
+     EXCLUDE_FROM_ALL
+     tools/enumgen.cpp
+-    ../deps/protobuf/src/google/protobuf/compiler/plugin.pb.cc
+ )
+ 
+ set(proto_files
+@@ -224,7 +218,7 @@ set(proto_files
+ )
+ 
+ target_link_libraries(enumgen
+-    libprotobuf
++    PRIVATE protobuf::libprotobuf protobuf::libprotoc
+ )
+ 
+ option(OVERWRITE_PB_SOURCE
+-- 
+2.51.0
+
