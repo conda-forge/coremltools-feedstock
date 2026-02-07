@@ -23,7 +23,7 @@ source:
     - patches/0008-Use-python-for-enumgen-instead-of-cpp-for-cross-comp.patch
 
 build:
-  number: 0
+  number: 1
   # The upstream package does not support Windows.
   skip: true  # [win]
 
