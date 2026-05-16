@@ -1,0 +1,95 @@
+From 2d851018844fe895fc3f23db0179e4f2829d5f9d Mon Sep 17 00:00:00 2001
+From: Mark Harfouche <mark.harfouche@gmail.com>
+Date: Sat, 16 May 2026 16:11:09 -0400
+Subject: [PATCH] Optionally build mlmodel as a shared libcoremltools library
+
+Adds a COREMLTOOLS_BUILD_SHARED option. When enabled, the mlmodel
+target is built as a SHARED library named libcoremltools and the
+modelpackage C++ sources (ModelPackage.cpp, JsonMap.cpp) are folded
+in so downstream C++ consumers such as onnxruntime can link a single
+library. Defaults to OFF, preserving the existing static build used
+to produce the Python extension modules.
+
+Also switches find_package(Protobuf) to CONFIG mode. The CMake
+FindProtobuf module creates a protobuf::libprotobuf target that does
+not propagate the abseil dependencies; a standalone shared library
+must resolve those abseil symbols at link time, so the config-mode
+target (which carries the abseil interface link libraries) is
+required.
+---
+ CMakeLists.txt         |  2 +-
+ mlmodel/CMakeLists.txt | 30 ++++++++++++++++++++++++++++--
+ 2 files changed, 29 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4652820..0e9751c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -39,7 +39,7 @@ message("Found python at ${Python_EXECUTABLE}")
+ message("Found python version ${Python_VERSION_STRING}")
+ message("Found python includes ${Python_INCLUDE_DIRS}")
+ 
+-find_package(Protobuf REQUIRED)
++find_package(Protobuf CONFIG REQUIRED)
+ 
+ include_directories(
+   .
+diff --git a/mlmodel/CMakeLists.txt b/mlmodel/CMakeLists.txt
+index bb6dab5..dcabe80 100644
+--- a/mlmodel/CMakeLists.txt
++++ b/mlmodel/CMakeLists.txt
+@@ -6,7 +6,7 @@ include_directories(
+   src
+ )
+ 
+-find_package(Protobuf REQUIRED)
++find_package(Protobuf CONFIG REQUIRED)
+ 
+ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+   set(CMAKE_CXX_FLAGS " \
+@@ -70,8 +70,16 @@ target_link_libraries(mlmodel_test_runner
+ )
+ endif ()  # BUILD_TESTS
+ 
++option(COREMLTOOLS_BUILD_SHARED
++       "Build mlmodel as a standalone shared library (libcoremltools)." OFF)
++if(COREMLTOOLS_BUILD_SHARED)
++  set(_mlmodel_lib_type SHARED)
++else()
++  set(_mlmodel_lib_type STATIC)
++endif()
++
+ add_library(mlmodel
+-    STATIC
++    ${_mlmodel_lib_type}
+ 
+     ${CMAKE_CURRENT_BINARY_DIR}/format/ArrayFeatureExtractor.pb.cc
+     ${CMAKE_CURRENT_BINARY_DIR}/format/AudioFeaturePrint.pb.cc
+@@ -176,6 +184,24 @@ set_property(TARGET mlmodel
+ 
+ target_link_libraries(mlmodel PRIVATE protobuf::libprotobuf protobuf::libprotoc)
+ 
++# When building the standalone shared library, fold in the modelpackage C++
++# sources (minus the Python bindings) and name the artifact libcoremltools so
++# that downstream C++ consumers (e.g. onnxruntime) can link a single library.
++if(COREMLTOOLS_BUILD_SHARED)
++  set_target_properties(mlmodel PROPERTIES OUTPUT_NAME coremltools)
++  target_sources(mlmodel PRIVATE
++    ${CMAKE_SOURCE_DIR}/modelpackage/src/ModelPackage.cpp
++    ${CMAKE_SOURCE_DIR}/modelpackage/src/utils/JsonMap.cpp
++  )
++  target_include_directories(mlmodel PRIVATE
++    ${CMAKE_SOURCE_DIR}/modelpackage/src
++    ${CMAKE_SOURCE_DIR}/modelpackage/src/utils
++  )
++  if (NOT APPLE)
++    target_link_libraries(mlmodel PRIVATE uuid)
++  endif()
++endif()
++
+ set(ENUMGEN_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/tools/enumgen.py)
+ 
+ set(proto_files
+-- 
+2.53.0
+
