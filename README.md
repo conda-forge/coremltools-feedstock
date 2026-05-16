@@ -3,6 +3,10 @@ About coremltools-feedstock
 
 Feedstock license: [BSD-3-Clause](https://github.com/conda-forge/coremltools-feedstock/blob/main/LICENSE.txt)
 
+
+About coremltools
+-----------------
+
 Home: https://github.com/apple/coremltools
 
 Package license: BSD-3-Clause
@@ -21,6 +25,15 @@ Core ML provides a unified representation for all models. Your app uses Core ML 
 
 Core ML optimizes on-device performance by leveraging the CPU, GPU, and Neural Engine while minimizing its memory footprint and power consumption.
 
+
+About libcoremltools
+--------------------
+
+Home: https://github.com/apple/coremltools
+
+Package license: BSD-3-Clause
+
+Summary: C++ shared library and headers for Core ML model tools (mlmodel core).
 
 Current build status
 ====================
@@ -228,6 +241,7 @@ Current release info
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
 | [![Conda Recipe](https://img.shields.io/badge/recipe-coremltools-green.svg)](https://anaconda.org/conda-forge/coremltools) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/coremltools.svg)](https://anaconda.org/conda-forge/coremltools) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/coremltools.svg)](https://anaconda.org/conda-forge/coremltools) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/coremltools.svg)](https://anaconda.org/conda-forge/coremltools) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-libcoremltools-green.svg)](https://anaconda.org/conda-forge/libcoremltools) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/libcoremltools.svg)](https://anaconda.org/conda-forge/libcoremltools) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/libcoremltools.svg)](https://anaconda.org/conda-forge/libcoremltools) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/libcoremltools.svg)](https://anaconda.org/conda-forge/libcoremltools) |
 
 Installing coremltools
 ======================
@@ -239,16 +253,16 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-Once the `conda-forge` channel has been enabled, `coremltools` can be installed with `conda`:
+Once the `conda-forge` channel has been enabled, `coremltools, libcoremltools` can be installed with `conda`:
 
 ```
-conda install coremltools
+conda install coremltools libcoremltools
 ```
 
 or with `mamba`:
 
 ```
-mamba install coremltools
+mamba install coremltools libcoremltools
 ```
 
 It is possible to list all of the versions of `coremltools` available on your platform with `conda`:
