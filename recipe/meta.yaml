@@ -2,7 +2,7 @@
 
 package:
   name: coremltools
-  version: {{ version }}
+  version: "{{ version }}"
 
 source:
   # The sdist on PyPI lacks at least
