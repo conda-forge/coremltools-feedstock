@@ -116,9 +116,6 @@ outputs:
         - zlib
         - libprotobuf
         - libabseil
-      run:
-        - libprotobuf
-        - libabseil
     test:
       commands:
         - test -f ${PREFIX}/lib/libcoremltools.dylib
