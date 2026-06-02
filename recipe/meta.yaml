@@ -2,7 +2,7 @@
 
 package:
   name: coremltools
-  version: {{ version }}
+  version: "{{ version }}"
 
 source:
   # The sdist on PyPI lacks at least
@@ -21,12 +21,16 @@ source:
     - patches/0006-Update-mlmodel-to-newer-absel.patch
     - patches/0007-Use-upstream-kmeans1d-always.patch
     - patches/0008-Use-python-for-enumgen-instead-of-cpp-for-cross-comp.patch
+    - patches/0009-Optionally-build-mlmodel-as-a-shared-libcoremltools-.patch
 
 build:
-  number: 1
+  number: 2
   # The upstream package does not support Windows.
   skip: true  # [win]
 
+# A single build (build.sh) produces both the Python package and, on macOS,
+# the standalone libcoremltools shared library + headers. The two `outputs`
+# below split the resulting files into separate packages.
 requirements:
   build:
     - python                                 # [build_platform != target_platform]
@@ -73,6 +77,7 @@ requirements:
   run_constrained:
     - pytorch >=1.4
 
+# Applies to the main `coremltools` output; `libcoremltools` overrides it.
 test:
   requires:
     - pip
@@ -82,6 +87,49 @@ test:
     - coremltools
     # required for predict() on macOS
     - coremltools.libcoremlpython  # [osx]
+
+outputs:
+  # The Python package. The top-level build.sh installs only the Python
+  # package into $PREFIX, so this (scriptless) output packages it as-is.
+  # The mlmodel C++ core is statically linked into the Python extension
+  # modules, so this package is self-contained.
+  - name: coremltools
+
+  # The mlmodel C++ core (proto types, MILBlob, and the modelpackage helpers)
+  # as a standalone shared library plus development headers, so that other
+  # C++ projects (e.g. onnxruntime's CoreML execution provider) can link
+  # against it instead of vendoring the coremltools sources. macOS only,
+  # since CoreML is Apple-only. build.sh stages the files; this output
+  # installs them into its own prefix.
+  - name: libcoremltools
+    build:
+      skip: true  # [not osx]
+      run_exports:
+        - {{ pin_subpackage('libcoremltools', max_pin='x.x') }}
+    script: install-libcoremltools.sh
+    requirements:
+      build:
+        - {{ stdlib('c') }}
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+      host:
+        - zlib
+        - libprotobuf
+        - libabseil
+    test:
+      commands:
+        - test -f ${PREFIX}/lib/libcoremltools.dylib
+        - test -f ${PREFIX}/include/coremltools/mlmodel/src/Model.hpp
+        - test -f ${PREFIX}/include/coremltools/mlmodel/src/MILBlob/Blob/StorageWriter.hpp
+        - test -f ${PREFIX}/include/coremltools/mlmodel/build/format/Model.pb.h
+        - test -f ${PREFIX}/include/coremltools/mlmodel/format/Model.proto
+        - test -f ${PREFIX}/include/coremltools/modelpackage/src/ModelPackage.hpp
+    about:
+      home: https://github.com/apple/coremltools
+      license: BSD-3-Clause
+      license_family: BSD
+      license_file: LICENSE.txt
+      summary: C++ shared library and headers for Core ML model tools (mlmodel core).
 
 about:
   home: https://github.com/apple/coremltools
@@ -102,6 +150,7 @@ about:
   dev_url: https://github.com/apple/coremltools
 
 extra:
+  feedstock-name: coremltools
   recipe-maintainers:
     - 1duo
     - aseemw
