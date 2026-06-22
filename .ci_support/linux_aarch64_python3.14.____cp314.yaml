@@ -17,9 +17,9 @@ cxx_compiler_version:
 docker_image:
 - quay.io/condaforge/linux-anvil-x86_64:alma9
 libabseil:
-- '20260107'
+- '20260526'
 libprotobuf:
-- 6.33.5
+- 7.35.1
 numpy:
 - '2'
 pin_run_as_build:
