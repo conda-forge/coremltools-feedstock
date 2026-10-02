@@ -1,0 +1,28 @@
+Subject: [PATCH] Only require Python Development.Module
+
+The extension modules never embed the interpreter, so Development.Embed
+(and with it libpython) is not needed. conda-forge's python 3.15 ships no
+libpython, which makes find_package(Python ... Development) fail.
+On macOS the targets already link with -undefined dynamic_lookup.
+
+---
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -33,7 +33,7 @@
+ 
+ add_subdirectory(mlmodel)
+ 
+-find_package(Python COMPONENTS Interpreter Development REQUIRED)
++find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+ 
+ message("Found python at ${Python_EXECUTABLE}")
+ message("Found python version ${Python_VERSION_STRING}")
+@@ -130,7 +130,7 @@
+ find_library(FOUNDATION Foundation)
+ 
+ if (APPLE AND CORE_VIDEO AND CORE_ML AND FOUNDATION)
+-  find_package(Python COMPONENTS Interpreter Development NumPy REQUIRED)
++  find_package(Python COMPONENTS Interpreter Development.Module NumPy REQUIRED)
+   message("Found numpy include path at ${Python_NumPy_INCLUDE_DIRS}")
+ 
+   include_directories(${Python_NumPy_INCLUDE_DIRS})
