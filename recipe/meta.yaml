@@ -25,7 +25,7 @@ source:
     - patches/0010-Only-require-Python-Development.Module.patch
 
 build:
-  number: 4
+  number: 5
   # The upstream package does not support Windows.
   skip: true  # [win]
 
